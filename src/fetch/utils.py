@@ -10,3 +10,19 @@ def get_last_timestamp():
 
     conn.close()
     return result
+import time
+
+def get_days_to_fetch(last_ts):
+    if not last_ts:
+        return 30 
+
+    now = int(time.time())
+    diff_hours = (now - last_ts) / 3600
+
+    if diff_hours <= 24:
+        return 1
+    elif diff_hours <= 168:
+        return 7
+    else:
+        return 30
+

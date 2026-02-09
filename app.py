@@ -1,5 +1,6 @@
 # app.py
 import streamlit as st
+import os
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import timedelta
@@ -11,7 +12,13 @@ from src.analysis.market_signal import generate_market_signal
 from src.analysis.volatility import add_volatility_features
 
 from src.analysis.summary_metrics import get_summary_metrics
-from src.fetch.fetch_realtime import run as fetch_realtime
+from src.fetch.fetch_incremental import run as fetch_incremental
+from src.prediction.prediction import (
+    load_price_data,
+    prepare_5m_data,
+    predict_linear
+)
+
 
 
 st.set_page_config(
@@ -27,14 +34,9 @@ timeframe = st.selectbox(
     index=2
 )
 
-
-# ======================
-# REFRESH BUTTON
-# ======================
 if st.button("🔄 Refresh Data"):
-    fetch_realtime()   # insert realtime row
+    fetch_incremental()
     st.rerun()
-
 
 def filter_timeframe(df, timeframe):
     now = df["timestamp"].max()
@@ -59,11 +61,22 @@ df = load_price_history()
 df = add_moving_averages(df)
 df = add_support_resistance(df)
 df = add_volatility_features(df)
-
 df = filter_timeframe(df, timeframe)
 
 signal = generate_market_signal(df)
 summary = get_summary_metrics(df)
+
+try:
+    raw_df = load_price_data()        # dari DB
+    df_5m = prepare_5m_data(raw_df)   # resample ke 5 menit
+    pred_df = predict_linear(
+        df_5m,
+        window=288,   # 24 jam data (288 x 5 menit)
+        steps=12      # prediksi 1 jam ke depan
+    )
+except Exception as e:
+    st.warning(f"Prediction unavailable: {e}")
+    pred_df = None
 
 # ======================
 # METRICS
@@ -113,6 +126,20 @@ fig.add_trace(go.Scatter(
     line=dict(dash="dot")
 ))
 
+# ======================
+# PREDICTION LINE
+# ======================
+if pred_df is not None and not pred_df.empty:
+    fig.add_trace(go.Scatter(
+        x=pred_df["datetime"],
+        y=pred_df["predicted_price"],
+        name="Prediction (1H)",
+        line=dict(color="orange", dash="dash")
+    ))
+
+
+
+
 fig.update_layout(
     height=600,
     xaxis_title="Time",
@@ -121,3 +148,5 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
+

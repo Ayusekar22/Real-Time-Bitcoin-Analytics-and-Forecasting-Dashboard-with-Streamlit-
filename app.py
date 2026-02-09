@@ -19,8 +19,6 @@ from src.prediction.prediction import (
     predict_linear
 )
 
-
-
 st.set_page_config(
     page_title="Crypto Market Dashboard",
     layout="wide"
@@ -54,9 +52,6 @@ def filter_timeframe(df, timeframe):
 
     return df
 
-# ======================
-# LOAD & ANALYZE DATA
-# ======================
 df = load_price_history()
 df = add_moving_averages(df)
 df = add_support_resistance(df)
@@ -67,20 +62,17 @@ signal = generate_market_signal(df)
 summary = get_summary_metrics(df)
 
 try:
-    raw_df = load_price_data()        # dari DB
-    df_5m = prepare_5m_data(raw_df)   # resample ke 5 menit
+    raw_df = load_price_data()   
+    df_5m = prepare_5m_data(raw_df)   
     pred_df = predict_linear(
         df_5m,
-        window=288,   # 24 jam data (288 x 5 menit)
-        steps=12      # prediksi 1 jam ke depan
+        window=288,   
+        steps=12      
     )
 except Exception as e:
     st.warning(f"Prediction unavailable: {e}")
     pred_df = None
 
-# ======================
-# METRICS
-# ======================
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("💰 Price", f"${summary['current_price']:,.2f}")
@@ -88,9 +80,6 @@ col2.metric("📈 % Change", f"{summary['pct_change']:.2f}%")
 col3.metric("🌪 Volatility", f"{summary['volatility']:.2f}")
 col4.metric("🚦 Signal", signal)
 
-# ======================
-# PRICE CHART
-# ======================
 fig = go.Figure()
 
 fig.add_trace(go.Scatter(
@@ -126,9 +115,7 @@ fig.add_trace(go.Scatter(
     line=dict(dash="dot")
 ))
 
-# ======================
-# PREDICTION LINE
-# ======================
+
 if pred_df is not None and not pred_df.empty:
     fig.add_trace(go.Scatter(
         x=pred_df["datetime"],
@@ -136,8 +123,6 @@ if pred_df is not None and not pred_df.empty:
         name="Prediction (1H)",
         line=dict(color="orange", dash="dash")
     ))
-
-
 
 
 fig.update_layout(

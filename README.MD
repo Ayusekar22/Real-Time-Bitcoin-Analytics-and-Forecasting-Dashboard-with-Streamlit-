@@ -116,13 +116,8 @@ CREATE TABLE price_history (
 
 ---
 
-## 🔮 Possible Improvements
-
-* Confidence bands (±σ)
-* Volatility-aware prediction flattening
-* Advanced models (ARIMA, LSTM)
-
----
+## Project Overview 
+![Dashboard](data/BitcoinDashboard.gif)
 
 ## License
 
